@@ -9,35 +9,21 @@ function createNeuralNetwork(n_input, n_hidden, n_output)
         )
 end
 
-function ReLU(x)
-    x > 0 ? x : 0
-end
-
-
 function mean_squared_error(y, t)
     sum((y - t).^ 2) / 2
 end
 
-function soft_max(a)
-    exp_a = exp.(a .- maximum(a)) 
-    exp_a / sum(exp_a)
+function ReLU(x)
+    x > 0 ? x : 0
 end
 
-function numerical_diff(f, x)
-    h = 1e-4 # 0.0001
-    (f(x+h) - f(x-h)) / 2*h
+function sigmoid(x)
+    1 / (1 + exp(-x))
 end
-
-sigmoid(x) = 1 / (1 + exp(-x))
 
 function predict(nl::Dict, x)
-    s1 = ReLU.(x * nl["W1"] + nl["b1"])
+    s1 = sigmoid.(x * nl["W1"] + nl["b1"])
     s1 * nl["W2"] + nl["b2"]
-end
-
-function loss(nl::Dict, x, t)
-    pd = predict(nl, x)
-    mean_squared_error(pd, t)
 end
 
 function numerical_gradient(nl::Dict, f, layer::String)
@@ -62,29 +48,8 @@ function numerical_gradient(nl::Dict, f, layer::String)
 end
 
 
-#----------------
-#----------------
-
-train_data = [
-              ([0 0],[1]),
-              ([0 1],[0]),
-              ([1 0],[0]),
-              ([1 1],[1])
-             ]
-
-learning_rate = 0.1
-nl = createNeuralNetwork(2,4,1)
-
-global y1 = []
-global y2 = []
-global y3 = []
-global y4 = []
-
-train_count = 1000
-
-for i in 1:train_count
+function trainning!(nl::Dict, train_data, learning_rate)
     gr = copy(nl)
-    # learning
     function mean_loss(_nl::Dict)
         ps = []
         as = []
@@ -100,7 +65,31 @@ for i in 1:train_count
     for k in keys(nl)
         nl[k] -= gr[k]
     end
+    return nl
+end
 
+#----------------
+#----------------
+
+train_data = [
+              ([0 0],[1]),
+              ([0 1],[0]),
+              ([1 0],[0]),
+              ([1 1],[1])
+             ]
+
+nl = createNeuralNetwork(2,4,1)
+
+global y1 = []
+global y2 = []
+global y3 = []
+global y4 = []
+
+learning_rate = 0.25
+train_count = 2000
+
+for i in 1:train_count
+    trainning!(nl, train_data, learning_rate)
     append!(y1, predict(nl, [0 0]))
     append!(y2, predict(nl, [1 0]))
     append!(y3, predict(nl, [0 1]))
