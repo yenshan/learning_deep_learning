@@ -9,10 +9,9 @@ struct Affine
     dB::Matrix
 end
 
-struct ReLU
-    mask::BitMatrix
-end
-
+#-------
+# ReLU
+#-------
 function Affine(n_input, n_output)
     Affine(
          zeros(1, n_input),         # X
@@ -21,10 +20,6 @@ function Affine(n_input, n_output)
          zeros(n_input, n_output),  # dW
          zeros(1, n_output),        # dB
         )
-end
-
-function ReLU(n)
-    ReLU(falses(1, n))
 end
 
 function forward!(a::Affine, x)
@@ -42,11 +37,22 @@ function backward!(a::Affine, dout)
 end
 
 function update!(a::Affine, learning_rate )
-    # ここは勾配を+しないとうまく行かない 
-    nw = a.W + learning_rate * a.dW
-    nb = a.B + learning_rate * a.dB
+    nw = a.W - learning_rate * a.dW
+    nb = a.B - learning_rate * a.dB
     copy!(a.W, nw)
     copy!(a.B, nb)
+end
+
+
+#-------
+# ReLU
+#-------
+struct ReLU
+    mask::BitMatrix
+end
+
+function ReLU(n)
+    ReLU(falses(1, n))
 end
 
 function forward!(r::ReLU, x)
@@ -65,6 +71,8 @@ function update!(r::ReLU, learning_rate)
     return r
 end
 
+#--------
+#--------
 
 function predict!(nl, d)
     for e in nl
@@ -99,16 +107,6 @@ train_data = [
               ([1 1],[1])
              ]
 
-function mean_loss!(nl, train_data)
-    ps = []
-    as = []
-    for d in train_data
-        append!(ps, predict!(nl, d[1]))
-        append!(as, d[2])
-    end
-    mean_squared_error(ps, as)
-end
-
 learning_rate = 0.05
 train_count = 500
 
@@ -120,8 +118,7 @@ global loss = []
 for i in 1:train_count
     for d in train_data
         y = predict!(nl, d[1])
-        # 損失関数は単に正解ー予測値
-        training!(nl, d[2]-y) 
+        training!(nl, y - d[2]) 
         update_weight!(nl, learning_rate)
     end
 
